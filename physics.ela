@@ -1,0 +1,69 @@
+import raylib::*;
+
+BodyKind :: enum {
+  Static,
+  Rigid,
+}
+
+Body :: struct {
+  kind: BodyKind,
+  // scale of collider. position is taken from the gameobject.
+  // maybe we'll have other kinds later.
+  box:  Vector3,
+
+  transform: Transform,
+}
+
+impl Body {
+  check_collision :: fn(self, other: Body) -> bool {
+    if self.kind == other.kind && self.kind == BodyKind::Static {
+      return false;
+    }
+
+    self_min := self.transform.translation - self.box / 2.0;
+    self_max := self.transform.translation + self.box / 2.0;
+    other_min := other.transform.translation - other.box / 2.0;
+    other_max := other.transform.translation + other.box / 2.0;
+
+    return self_min.x < other_max.x && self_max.x > other_min.x &&
+           self_min.y < other_max.y && self_max.y > other_min.y &&
+           self_min.z < other_max.z && self_max.z > other_min.z;
+  }
+
+  resolve_collision :: fn(self, other: Body) -> Vector3 {
+    if !self.check_collision(other) {
+      return .{};
+    }
+
+    self_min := self.transform.translation - self.box / 2.0;
+    self_max := self.transform.translation + self.box / 2.0;
+    other_min := other.transform.translation - other.box / 2.0;
+    other_max := other.transform.translation + other.box / 2.0;
+
+    penetration := .{
+      x: min(self_max.x - other_min.x, other_max.x - self_min.x),
+      y: min(self_max.y - other_min.y, other_max.y - self_min.y),
+      z: min(self_max.z - other_min.z, other_max.z - self_min.z),
+    };
+
+    if penetration.x < penetration.y && penetration.x < penetration.z {
+      return .{
+        x: penetration.x, 
+        y: 0.0, 
+        z: 0.0
+      };
+    } else if penetration.y < penetration.x && penetration.y < penetration.z {
+      return .{ 
+        x: 0.0, 
+        y: penetration.y, 
+        z: 0.0
+      };
+    } else {
+      return .{
+        x: 0.0, 
+        y: 0.0, 
+        z: penetration.z
+      };
+    }
+  }
+}

@@ -1,36 +1,42 @@
+
 import fmt::*;
-// import engine::*;
-#include "engine.ela";
+import engine::*;
 
 main :: fn() {
   mut engine: Engine;
   mut scene: Scene;
 
-  engine.init("Blaster");
-
-
-  scene.add_object(.{
-    position: Vector3::zero(),
-    scale:    Vector3::one(),
-    model: 0,
-  });
-
-  DisableCursor();
+  engine.init("Blaster"); {
+    DisableCursor();
+  }
 
   engine.update = fn(engine: *mut Engine) {
+
+    if IsKeyPressed(KeyboardKey::KEY_R) {
+      engine.load_scene(engine.scene);
+      return;
+    }
+
     UpdateCamera(&const engine.scene.camera, CameraMode::CAMERA_FIRST_PERSON);
     
     for object in engine.scene.game_objects {
-      object.rotated(Vector3::one() / 2);
+      object.rotate(Vector4::one() / 2);
 
-      rot_axis := object.rotation.normalize();
-      rot_angle := object.rotation.length();
+      transform := object.transform;
+      mut rot_axis := Vector3.{
+        x: transform.rotation.x, 
+        y: transform.rotation.y, 
+        z: transform.rotation.z
+      };
+
+      rot_axis = rot_axis.normalize();
+      rot_angle := transform.rotation.w;
 
       mut builder: String_Builder;
       defer builder.deinit();
 
       model := engine.scene.models[object.model];
-      DrawModelEx(model, object.position, rot_axis, rot_angle, object.scale, WHITE);
+      DrawModelEx(model, object.transform.translation, rot_axis, rot_angle, object.transform.scale, WHITE);
     }
   };
   
@@ -38,12 +44,24 @@ main :: fn() {
   };
 
   scene.load = fn(scene: *mut Scene) {
-    scene.models.push(LoadModel("assets/cuba.obj"c));
     scene.camera.target = .{x: 0, y: 0, z: 0};
     scene.camera.position = .{x: 0, y: 2, z: 5};
     scene.camera.up = .{x: 0, y: 1, z: 0};
     scene.camera.fovy = 60.0;
-    
+
+    scene.add_object(.{
+      transform: .{
+        scale: Vector3::one(),
+      },
+      model:    scene.load_model("assets/cuba.obj"),
+    });
+  };
+
+  scene.unload = fn(scene: *mut Scene) {
+    for model in scene.models {
+      UnloadModel(model);
+    }
+    scene.models.length = 0;
   };
 
   engine.load_scene(&mut scene);

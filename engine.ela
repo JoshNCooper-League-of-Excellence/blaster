@@ -1,38 +1,35 @@
 import raylib::*;
 import array::*;
+import physics::*;
 
 Metadata :: struct {
   // this will be used for ansillary 
   // informations like interactions, whatever, and such.
 }
 
-Body :: struct {
-  // this will be used for physics interactions.
-  // collision, rigidbody physics, static body physics,
-  // etc.
-}
-
 GameObject :: struct {
-  position: Vector3,
-  rotation: Vector3,
-  scale:    Vector3,
+  transform: Transform,
 
   model:    u32,
+
+  // this is a pointer because it very well may be shared?
+  // textures, colors, idk.
   metadata: *mut Metadata,
-  body:     *mut Body,
+  
+  body:     Body,
 }
 
 impl GameObject {
-  rotated :: fn(*mut self, rotation: Vector3) {
-    self.rotation = Vector3Add(self.rotation, rotation);
+  rotate :: fn(*mut self, rotation: Vector4) {
+    self.transform.rotation = Vector4Add(self.transform.rotation, rotation);
   }
 
-  scaled :: fn(*mut self, factor: Vector3) {
-    self.scale = Vector3Multiply(self.scale, factor);
+  scale :: fn(*mut self, factor: Vector3) {
+    self.transform.scale = Vector3Multiply(self.transform.scale, factor);
   }
 
-  translated :: fn(*mut self, translation: Vector3) {
-    self.position = Vector3Add(self.position, translation);
+  translate :: fn(*mut self, translation: Vector3) {
+    self.transform.translation = Vector3Add(self.transform.translation, translation);
   }
 }
 
@@ -45,6 +42,10 @@ Scene :: struct {
 }
 
 impl Scene {
+  load_model :: fn(*mut self, path: str) -> u32 {
+    self.models.push(LoadModel(path.data));
+    return self.models.length -1;
+  }
   add_object :: fn(*mut self, go: GameObject) {
     self.game_objects.push(new(go));
   }
@@ -57,9 +58,6 @@ Engine :: struct {
 }
 
 impl Engine {
-  load_model :: fn(*mut self, path: str) -> *mut Model {
-    return null;
-  }
 
   load_scene :: fn(*mut self, scene: *mut Scene) {
     if self.scene && self.scene.unload {

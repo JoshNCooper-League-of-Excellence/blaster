@@ -3,6 +3,4 @@
 !.gitignore
 !/assets
 !/assets/*
-!/array.ela
-!/engine.ela
-!/main.ela
+!/*.ela
