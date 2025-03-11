@@ -1,5 +1,7 @@
 import raylib::*;
 
+import fmt::*;
+
 BodyKind :: enum {
   Static,
   Rigid,
@@ -12,8 +14,17 @@ Body :: struct {
   transform: Transform,
 }
 
+Collision :: struct {
+  penetration: Vector3,
+  collided: bool,
+}
+
 impl Body {
-  resolve_collision :: fn(self, other: Body) -> Vector3 {
+  resolve_collision :: fn(self, other: Body) -> Collision {
+    if self.kind == other.kind && other.kind == BodyKind::Static {
+      return .{collided: false, penetration: Vector3::zero()};
+    }
+
     mut self_corners: Vector3[8] = .[
       self.transform.translation + Vector3.{x: -self.transform.scale.x / 2.0, y: -self.transform.scale.y / 2.0, z: -self.transform.scale.z / 2.0},
       self.transform.translation + Vector3.{x:  self.transform.scale.x / 2.0, y: -self.transform.scale.y / 2.0, z: -self.transform.scale.z / 2.0},
@@ -76,6 +87,13 @@ impl Body {
       other_max.z = max(other_max.z, corner.z);
     }
 
+    // Check for overlap on all axes
+    if self_max.x < other_min.x || self_min.x > other_max.x ||
+       self_max.y < other_min.y || self_min.y > other_max.y ||
+       self_max.z < other_min.z || self_min.z > other_max.z {
+      return .{collided: false, penetration: Vector3::zero()};
+    }
+
     // Calculate the penetration depth
     penetration := Vector3.{
       x: min(self_max.x - other_min.x, other_max.x - self_min.x),
@@ -84,24 +102,9 @@ impl Body {
     };
 
     // Return the penetration vector
-    if penetration.x < penetration.y && penetration.x < penetration.z {
-      return Vector3.{
-        x: penetration.x, 
-        y: 0.0, 
-        z: 0.0
-      };
-    } else if penetration.y < penetration.x && penetration.y < penetration.z {
-      return Vector3.{
-        x: 0.0, 
-        y: penetration.y, 
-        z: 0.0
-      };
-    } else {
-      return Vector3.{
-        x: 0.0, 
-        y: 0.0, 
-        z: penetration.z
-      };
-    }
+    return .{
+      collided: true,
+      penetration: penetration,
+    };
   }
 }
