@@ -1,0 +1,84 @@
+import raylib::*;
+import array::*;
+
+Metadata :: struct {
+  // this will be used for ansillary 
+  // informations like interactions, whatever, and such.
+}
+
+Body :: struct {
+  // this will be used for physics interactions.
+  // collision, rigidbody physics, static body physics,
+  // etc.
+}
+
+GameObject :: struct {
+  position: Vector3,
+  rotation: Vector3,
+  scale:    Vector3,
+
+  model:    u32,
+  metadata: *mut Metadata,
+  body:     *mut Body,
+}
+
+Scene :: struct {
+  game_objects:  List!<*mut GameObject>,
+  load:   fn *(*mut Scene),
+  unload: fn *(*mut Scene),
+  models: Array!<Model>,
+  camera: Camera3D
+}
+
+impl Scene {
+  add_object :: fn(*mut self, go: GameObject) {
+    self.game_objects.push(new(go));
+  }
+}
+
+Engine :: struct {
+  scene: *mut Scene,
+  update: fn*(*mut Engine),
+  physics: fn*(*mut Engine),
+}
+
+impl Engine {
+  load_model :: fn(*mut self, path: str) -> *mut Model {
+    return null;
+  }
+
+  load_scene :: fn(*mut self, scene: *mut Scene) {
+    if self.scene && self.scene.unload {
+      self.scene.unload(self.scene);
+    }
+    self.scene = scene;
+    if scene.load {
+      scene.load(self.scene);
+    }
+  }
+
+  init :: fn(*mut self, title: str) {
+    // Silence the raylib console output
+    SetTraceLogLevel(TraceLogLevel::LOG_NONE);
+    InitWindow(800, 600, title.data);
+    SetConfigFlags(ConfigFlags::FLAG_WINDOW_RESIZABLE);
+    SetTargetFPS(60);
+  }
+
+  run :: fn(*mut self) {
+
+    while !WindowShouldClose() {
+      BeginDrawing();
+      ClearBackground(WHITE);
+      BeginMode3D(self.scene.camera);
+      UpdateCamera(&const self.scene.camera, CameraMode::CAMERA_FIRST_PERSON);
+        if self.physics then
+          self.physics(self);
+        
+        if self.update then
+          self.update(self);
+      EndMode3D();
+      EndDrawing();
+    }
+  }
+}
