@@ -22,6 +22,20 @@ GameObject :: struct {
   body:     *mut Body,
 }
 
+impl GameObject {
+  rotated :: fn(*mut self, rotation: Vector3) {
+    self.rotation = Vector3Add(self.rotation, rotation);
+  }
+
+  scaled :: fn(*mut self, factor: Vector3) {
+    self.scale = Vector3Multiply(self.scale, factor);
+  }
+
+  translated :: fn(*mut self, translation: Vector3) {
+    self.position = Vector3Add(self.position, translation);
+  }
+}
+
 Scene :: struct {
   game_objects:  List!<*mut GameObject>,
   load:   fn *(*mut Scene),
@@ -71,7 +85,6 @@ impl Engine {
       BeginDrawing();
       ClearBackground(WHITE);
       BeginMode3D(self.scene.camera);
-      UpdateCamera(&const self.scene.camera, CameraMode::CAMERA_FIRST_PERSON);
         if self.physics then
           self.physics(self);
         

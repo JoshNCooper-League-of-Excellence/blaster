@@ -1,5 +1,6 @@
-import fmt::println;
-import engine::*;
+import fmt::*;
+// import engine::*;
+#include "engine.ela";
 
 main :: fn() {
   mut engine: Engine;
@@ -7,21 +8,30 @@ main :: fn() {
 
   engine.init("Blaster");
 
+
   scene.add_object(.{
     position: Vector3::zero(),
     scale:    Vector3::one(),
     model: 0,
   });
 
+  DisableCursor();
+
   engine.update = fn(engine: *mut Engine) {
+    UpdateCamera(&const engine.scene.camera, CameraMode::CAMERA_FIRST_PERSON);
+    
     for object in engine.scene.game_objects {
-      object.rotation = object.rotation.add(Vector3::one());
+      object.rotated(Vector3::one() / 2);
+
       rot_axis := object.rotation.normalize();
       rot_angle := object.rotation.length();
-      DrawModelEx(engine.scene.models[object.model], object.position, rot_axis, rot_angle, object.scale, BLACK);
+
+      mut builder: String_Builder;
+      defer builder.deinit();
+
+      model := engine.scene.models[object.model];
+      DrawModelEx(model, object.position, rot_axis, rot_angle, object.scale, WHITE);
     }
-    engine.scene.camera.position = .{x: 10, y: 10, z: 10};
-    engine.scene.camera.target = .{x: 0, y: 0, z: 0};
   };
   
   engine.physics = fn(engine: *mut Engine) {
@@ -29,10 +39,11 @@ main :: fn() {
 
   scene.load = fn(scene: *mut Scene) {
     scene.models.push(LoadModel("assets/cuba.obj"c));
+    scene.camera.target = .{x: 0, y: 0, z: 0};
     scene.camera.position = .{x: 0, y: 2, z: 5};
-    scene.camera.target = .{x: 0, y: 2, z: 0};
     scene.camera.up = .{x: 0, y: 1, z: 0};
-    scene.camera.fovy = 45.0;
+    scene.camera.fovy = 60.0;
+    
   };
 
   engine.load_scene(&mut scene);

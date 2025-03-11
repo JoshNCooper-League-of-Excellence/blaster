@@ -29,18 +29,3 @@ impl!<T> Subscript!<T> for Array!<T> {
     return &mut self.data[idx];
   }
 }
-
-impl!<T> Iterable!<T> for Array!<T> {
-  iter :: fn(*const self) -> Iter!<T> {
-    return .{
-      ptr: &mut self.data[0], 
-      end: &const self.data[self.length]
-    }
-  }
-  iter_mut :: fn(*mut self) -> IterMut!<*mut T> {
-    return .{
-      ptr: &mut self.data[0], 
-      end: &const self.data[self.length]
-    }
-  }
-}
