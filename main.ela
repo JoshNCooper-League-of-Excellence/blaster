@@ -55,6 +55,7 @@ main :: fn() {
       },
       model:    scene.load_model("assets/cuba.obj"),
     });
+    
   };
 
   scene.unload = fn(scene: *mut Scene) {
