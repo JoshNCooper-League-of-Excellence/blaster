@@ -21,22 +21,19 @@ Collision :: struct {
 impl Transform {
   get_corners :: fn(*const self) -> Vector3[] {
     mut corners := List!<Vector3>::init(.[
-      // Bottom face (counter-clockwise order)
-      .{x: -self.scale.x, y: -self.scale.y, z: -self.scale.z},
-      .{x:  self.scale.x, y: -self.scale.y, z: -self.scale.z},
-      .{x:  self.scale.x, y:  self.scale.y, z: -self.scale.z},
-      .{x: -self.scale.x, y:  self.scale.y, z: -self.scale.z},
+      .{x: -self.scale.x / 2, y: -self.scale.y / 2, z: -self.scale.z / 2},
+      .{x:  self.scale.x / 2, y: -self.scale.y / 2, z: -self.scale.z / 2},
+      .{x:  self.scale.x / 2, y:  self.scale.y / 2, z: -self.scale.z / 2},
+      .{x: -self.scale.x / 2, y:  self.scale.y / 2, z: -self.scale.z / 2},
     
-      // Top face (counter-clockwise order)
-      .{x: -self.scale.x, y: -self.scale.y, z:  self.scale.z},
-      .{x:  self.scale.x, y: -self.scale.y, z:  self.scale.z},
-      .{x:  self.scale.x, y:  self.scale.y, z:  self.scale.z},
-      .{x: -self.scale.x, y:  self.scale.y, z:  self.scale.z}
+      .{x: -self.scale.x / 2, y: -self.scale.y / 2, z:  self.scale.z / 2},
+      .{x:  self.scale.x / 2, y: -self.scale.y / 2, z:  self.scale.z / 2},
+      .{x:  self.scale.x / 2, y:  self.scale.y / 2, z:  self.scale.z / 2},
+      .{x: -self.scale.x / 2, y:  self.scale.y / 2, z:  self.scale.z / 2}
     ]);
 
     for corner in corners.iter_mut() {
-      *corner = Vector3RotateByQuaternion(*corner, Quaternion::from_euler(self.rotation.x, self.rotation.y, self.rotation.z));
-      *corner = *corner + self.translation;
+      *corner = Vector3RotateByQuaternion(*corner, self.rotation) + self.translation;
     }
 
     return corners;
