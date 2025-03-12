@@ -1,16 +1,21 @@
-
 import fmt::*;
 import engine::*;
 
+load_scenes :: fn() -> Scene[] {
+  mut scenes: Scene[];
+  #include "scenes/0.ela";
+  #include "scenes/1.ela";
+  return scenes;
+}
+
 main :: fn() {
   mut engine: Engine;
-  mut scene: Scene;
 
   engine.init("Blaster"); {
     DisableCursor();
   }
 
-  engine.background_color = WHITE;
+  engine.background_color = BLACK;
 
   engine.update = fn(engine: *mut Engine) {
     if IsKeyPressed(KeyboardKey::KEY_R) {
@@ -22,60 +27,46 @@ main :: fn() {
     
     for object in engine.scene.game_objects {
       transform := &mut object.body.transform;
-      transform.rotation = transform.rotation + Quaternion::from_euler(0.1, 0.01, 0);
+      transform.rotation = Quaternion::from_euler(0, 45.0, 0);
 
-      rot_axis  := Vector3::normalize(Vector3::new(transform.rotation.x, transform.rotation.y, transform.rotation.z));
-      rot_angle := transform.rotation.w;
+      mut rot_axis: Vector3;
+      mut rot_angle: f32;
 
-      model := engine.scene.models[object.model];
-      offset := (Vector3::one() * 0);
-      
-      DrawModelEx(model, 
-        transform.translation + offset, 
-        rot_axis, 
-        rot_angle, 
-        transform.scale, 
-        BLACK.with_alpha(50)
+      QuaternionToAxisAngle(
+        transform.rotation, 
+        &mut rot_axis, 
+        &mut rot_angle
       );
 
+      DrawModelEx(
+        engine.scene.models[object.model],
+        transform.translation, 
+        rot_axis, rot_angle, 
+        transform.scale, WHITE,
+      );
+      
       object.body.draw();
     }
   };
   
   engine.physics = fn(engine: *mut Engine) {
-  };
-
-  scene.load = fn(scene: *mut Scene) {
-    scene.camera.target = .{x: 0, y: 0, z: 0};
-    scene.camera.position = .{x: 0, y: 2, z: 5};
-    scene.camera.up = .{x: 0, y: 1, z: 0};
-    scene.camera.fovy = 60.0;
-
-    scene.add_object(.{
-      body: .{
-        transform: .{
-          scale: Vector3::one(),
-        },
-        kind: BodyKind::Rigid,
-      },
-      model: scene.load_model("assets/cuba.obj"),
-    });
-    
-  };
-
-  scene.unload = fn(scene: *mut Scene) {
-    for object in scene.game_objects {
-      free(object);
+    for object in engine.scene.game_objects {
+      object.body.contacts.clear();
     }
 
-    scene.game_objects.clear();
+    for object in engine.scene.game_objects {
+      for other in engine.scene.game_objects {
+        penetration, hit := object.body.resolve_collision(&mut other.body);
 
-    for model in scene.models {
-      UnloadModel(model);
+        if hit {
+          // translation := &mut object.body.transform.translation;
+          // *translation = translation.add(penetration / 1000.0);
+        }
+      }
     }
-    scene.models.length = 0;
   };
 
-  engine.load_scene(&mut scene);
+  scenes := load_scenes();
+  engine.load_scene(&mut scenes[0]);
   engine.run();
 }

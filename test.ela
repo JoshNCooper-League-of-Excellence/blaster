@@ -1,7 +1,7 @@
 import physics::*;
 
 #test test_body_no_collide :: fn() {
-  a := Body.{
+  mut a := Body.{
     transform: .{
       translation: Vector3::zero(),
       scale: Vector3::one(),
@@ -15,11 +15,11 @@ import physics::*;
     kind: BodyKind::Rigid
   }
   collision := a.resolve_collision(&const b);
-  assert("Bodies should not collide", collision.collided == false);
+  assert("Bodies should not collide", collision.hit == false);
 }
 
 #test test_body_collide_with_scale :: fn() {
-  a := Body.{
+  mut a := Body.{
     transform: .{
       translation: Vector3::zero(),
       scale: Vector3::new(2.0, 2.0, 2.0),
@@ -37,7 +37,7 @@ import physics::*;
   collision := a.resolve_collision(&const b);
 
   assert("Bodies should collide with scale", 
-      collision.collided == true && (
+      collision.hit == true && (
         collision.penetration.x != 0.0 ||
         collision.penetration.y != 0.0 ||
         collision.penetration.z != 0.0
@@ -46,7 +46,7 @@ import physics::*;
 }
 
 #test test_body_collide_with_rotation :: fn() {
-  a := Body.{
+  mut a := Body.{
     transform: .{
       translation: Vector3::zero(),
       rotation: .{x: 10, y: 20, z: 30},
@@ -63,11 +63,11 @@ import physics::*;
   }
 
   collision := a.resolve_collision(&const b);
-  assert("Bodies should collide with rotation", collision.collided == true && (collision.penetration.x != 0.0 || collision.penetration.y != 0.0 || collision.penetration.z != 0.0));
+  assert("Bodies should collide with rotation", collision.hit == true && (collision.penetration.x != 0.0 || collision.penetration.y != 0.0 || collision.penetration.z != 0.0));
 }
 
 #test test_body_no_collide_with_rotation :: fn() {
-  a := Body.{
+  mut a := Body.{
     transform: .{
       translation: Vector3::zero(),
       rotation: Quaternion::from_euler(0.0, 0.0, 0.0),
@@ -82,5 +82,5 @@ import physics::*;
     }
   }
   collision := a.resolve_collision(&const b);
-  assert("Bodies should not collide with rotation", collision.collided == false);
+  assert("Bodies should not collide with rotation", collision.hit == false);
 }

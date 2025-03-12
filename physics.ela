@@ -15,28 +15,28 @@ Body :: struct {
 
 Collision :: struct {
   penetration: Vector3,
-  collided: bool,
+  hit: bool,
 }
 
 impl Transform {
   get_corners :: fn(*const self) -> Vector3[] {
     mut corners := List!<Vector3>::init(.[
+      // Bottom face (counter-clockwise order)
       .{x: -self.scale.x, y: -self.scale.y, z: -self.scale.z},
       .{x:  self.scale.x, y: -self.scale.y, z: -self.scale.z},
-      .{x: -self.scale.x, y:  self.scale.y, z: -self.scale.z},
       .{x:  self.scale.x, y:  self.scale.y, z: -self.scale.z},
-
+      .{x: -self.scale.x, y:  self.scale.y, z: -self.scale.z},
+    
+      // Top face (counter-clockwise order)
       .{x: -self.scale.x, y: -self.scale.y, z:  self.scale.z},
       .{x:  self.scale.x, y: -self.scale.y, z:  self.scale.z},
-      .{x: -self.scale.x, y:  self.scale.y, z:  self.scale.z},
-      .{x:  self.scale.x, y:  self.scale.y, z:  self.scale.z}
+      .{x:  self.scale.x, y:  self.scale.y, z:  self.scale.z},
+      .{x: -self.scale.x, y:  self.scale.y, z:  self.scale.z}
     ]);
 
     for corner in corners.iter_mut() {
-      *corner =
-        self.translation +
-        Vector3RotateByQuaternion(*corner,
-        QuaternionFromEuler(self.rotation.x, self.rotation.y, self.rotation.z));
+      *corner = Vector3RotateByQuaternion(*corner, Quaternion::from_euler(self.rotation.x, self.rotation.y, self.rotation.z));
+      *corner = *corner + self.translation;
     }
 
     return corners;
@@ -44,13 +44,34 @@ impl Transform {
 }
 
 impl Body {
-  resolve_collision :: fn(*mut self, other: *const Body) -> Collision {
+  draw :: fn(*const self) {
+    mut corners := self.transform.get_corners();
+    defer corners.deinit();
+
+    color := switch self.contacts.is_empty() {
+      true => RED,
+      false => GREEN,
+    };
+
+    // Draw the edges of the cube
+    for i in 0..4 {
+      DrawLine3D(corners[i], corners[(i + 1) % 4], color); // Bottom face
+      DrawLine3D(corners[i + 4], corners[((i + 1) % 4) + 4], color); // Top face
+      DrawLine3D(corners[i], corners[i + 4], color); // Vertical edges
+    }
+  }
+}
+impl Body {
+  resolve_collision :: fn(*mut self, other: *mut Body) -> Collision {
     if self.kind == other.kind && other.kind == BodyKind::Static {
-      return .{collided: false, penetration: Vector3::zero()};
+      return .{
+        hit: false,
+        penetration: Vector3::zero()
+      };
     }
 
-    self_corners := self.transform.get_corners();
-    other_corners := other.transform.get_corners();
+    mut self_corners := self.transform.get_corners();
+    mut other_corners := other.transform.get_corners();
 
     defer {
       self_corners.deinit();
@@ -77,6 +98,7 @@ impl Body {
       other_min.x = min(other_min.x, corner.x);
       other_min.y = min(other_min.y, corner.y);
       other_min.z = min(other_min.z, corner.z);
+
       other_max.x = max(other_max.x, corner.x);
       other_max.y = max(other_max.y, corner.y);
       other_max.z = max(other_max.z, corner.z);
@@ -95,31 +117,11 @@ impl Body {
     };
 
     self.contacts.push(other);
+    other.contacts.push(self);
 
     return .{
-      collided: true,
+      hit: true,
       penetration: penetration,
     };
-  }
-
-  draw :: fn(*const self) {
-    mut corners := self.transform.get_corners();
-    defer corners.deinit();
-
-    mut color := RED;
-    if !self.contacts.is_empty() {
-      color = GREEN;
-    }
-
-    DrawLine3D(corners.data[3], corners.data[2], RED);
-    DrawLine3D(corners.data[2], corners.data[0], RED);
-    DrawLine3D(corners.data[4], corners.data[5], RED);
-    DrawLine3D(corners.data[5], corners.data[7], RED);
-    DrawLine3D(corners.data[7], corners.data[6], RED);
-    DrawLine3D(corners.data[6], corners.data[4], RED);
-    DrawLine3D(corners.data[0], corners.data[4], RED);
-    DrawLine3D(corners.data[1], corners.data[5], RED);
-    DrawLine3D(corners.data[2], corners.data[6], RED);
-    DrawLine3D(corners.data[3], corners.data[7], RED);
   }
 }
