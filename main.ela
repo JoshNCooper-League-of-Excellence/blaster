@@ -24,19 +24,25 @@ main :: fn() {
     }
 
     UpdateCamera(&const engine.scene.camera, CameraMode::CAMERA_FIRST_PERSON);
-    
+
     DrawGrid(1000, 1.0);
 
     for object in engine.scene.game_objects {
       transform := &mut object.body.transform;
-      transform.rotation = Quaternion::from_euler(0, fmod(GetTime(), 45.0) as f32, 0);
+
+      rotation := fmod(GetTime() / 2.0, 360.0) as f32;
+      transform.rotation = Quaternion::from_euler(
+        cos(rotation) as f32,
+        rotation * 2,
+        sin(rotation) as f32,
+      );
 
       mut rot_axis: Vector3;
       mut rot_angle: f32;
 
       QuaternionToAxisAngle(
-        transform.rotation, 
-        &mut rot_axis, 
+        transform.rotation,
+        &mut rot_axis,
         &mut rot_angle
       );
 
@@ -44,15 +50,15 @@ main :: fn() {
 
       DrawModelEx(
         engine.scene.models[object.model],
-        transform.translation, 
-        rot_axis, rot_angle, 
+        transform.translation,
+        rot_axis, rot_angle,
         transform.scale / 2, WHITE,
       );
-      
+
       object.body.draw();
     }
   };
-  
+
   engine.physics = fn(engine: *mut Engine) {
     for object in engine.scene.game_objects {
       object.body.contacts.clear();
@@ -60,11 +66,13 @@ main :: fn() {
 
     for object in engine.scene.game_objects {
       for other in engine.scene.game_objects {
-        penetration, hit := object.body.resolve_collision(&mut other.body);
-
-        if hit {
-          // translation := &mut object.body.transform.translation;
-          // *translation = translation.add(penetration / 1000.0);
+        object.body.resolve_collision(&mut other.body);
+        pos := &mut object.body.transform.translation;
+        scale := object.body.transform.scale;
+        if pos.y >= scale.y / 2 {
+          pos.y -= 0.01;
+        } else {
+          pos.y = scale.y / 2;
         }
       }
     }

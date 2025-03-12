@@ -20,20 +20,23 @@ Collision :: struct {
 
 impl Transform {
   get_corners :: fn(*const self) -> Vector3[] {
+
     mut corners := List!<Vector3>::init(.[
-      .{x: -self.scale.x / 2, y: -self.scale.y / 2, z: -self.scale.z / 2},
-      .{x:  self.scale.x / 2, y: -self.scale.y / 2, z: -self.scale.z / 2},
-      .{x:  self.scale.x / 2, y:  self.scale.y / 2, z: -self.scale.z / 2},
-      .{x: -self.scale.x / 2, y:  self.scale.y / 2, z: -self.scale.z / 2},
+      .{ x: -self.scale.x / 2, y: -self.scale.y / 2, z: -self.scale.z / 2 },
+      .{ x:  self.scale.x / 2, y: -self.scale.y / 2, z: -self.scale.z / 2 },
+      .{ x:  self.scale.x / 2, y:  self.scale.y / 2, z: -self.scale.z / 2 },
+      .{ x: -self.scale.x / 2, y:  self.scale.y / 2, z: -self.scale.z / 2 },
     
-      .{x: -self.scale.x / 2, y: -self.scale.y / 2, z:  self.scale.z / 2},
-      .{x:  self.scale.x / 2, y: -self.scale.y / 2, z:  self.scale.z / 2},
-      .{x:  self.scale.x / 2, y:  self.scale.y / 2, z:  self.scale.z / 2},
-      .{x: -self.scale.x / 2, y:  self.scale.y / 2, z:  self.scale.z / 2}
+      .{ x: -self.scale.x / 2, y: -self.scale.y / 2, z:  self.scale.z / 2 },
+      .{ x:  self.scale.x / 2, y: -self.scale.y / 2, z:  self.scale.z / 2 },
+      .{ x:  self.scale.x / 2, y:  self.scale.y / 2, z:  self.scale.z / 2 },
+      .{ x: -self.scale.x / 2, y:  self.scale.y / 2, z:  self.scale.z / 2 }
     ]);
 
     for corner in corners.iter_mut() {
-      *corner = Vector3RotateByQuaternion(*corner, self.rotation) + self.translation;
+      *corner = 
+        Vector3RotateByQuaternion(*corner, self.rotation) 
+        + self.translation;
     }
 
     return corners;
@@ -46,25 +49,22 @@ impl Body {
     defer corners.deinit();
 
     color := switch self.contacts.is_empty() {
-      true => RED,
-      false => GREEN,
+      true => GREEN,
+      false => RED,
     };
 
-    // Draw the edges of the cube
     for i in 0..4 {
-      DrawLine3D(corners[i], corners[(i + 1) % 4], color); // Bottom face
-      DrawLine3D(corners[i + 4], corners[((i + 1) % 4) + 4], color); // Top face
-      DrawLine3D(corners[i], corners[i + 4], color); // Vertical edges
+      DrawLine3D(corners[i], corners[(i + 1) % 4], color);
+      DrawLine3D(corners[i + 4], corners[((i + 1) % 4) + 4], color);
+      DrawLine3D(corners[i], corners[i + 4], color);
     }
   }
 }
+
 impl Body {
-  resolve_collision :: fn(*mut self, other: *mut Body) -> Collision {
+  resolve_collision :: fn(*mut self, other: *mut Body) {
     if self.kind == other.kind && other.kind == BodyKind::Static {
-      return .{
-        hit: false,
-        penetration: Vector3::zero()
-      };
+      return;
     }
 
     mut self_corners := self.transform.get_corners();
@@ -104,7 +104,7 @@ impl Body {
     if self_max.x < other_min.x || self_min.x > other_max.x ||
       self_max.y < other_min.y || self_min.y > other_max.y ||
       self_max.z < other_min.z || self_min.z > other_max.z {
-      return .{};
+      return;
     }
 
     penetration := Vector3.{
@@ -113,12 +113,13 @@ impl Body {
       z: min(self_max.z - other_min.z, other_max.z - self_min.z),
     };
 
+    mut translation := &mut self.transform.translation;
+    *translation = *translation + penetration / 2.0;
+
+    mut other_translation := &mut other.transform.translation;
+    *other_translation = *other_translation - penetration / 2.0;
+
     self.contacts.push(other);
     other.contacts.push(self);
-
-    return .{
-      hit: true,
-      penetration: penetration,
-    };
   }
 }
