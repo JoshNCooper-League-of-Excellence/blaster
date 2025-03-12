@@ -8,8 +8,6 @@ Metadata :: struct {
 }
 
 GameObject :: struct {
-  transform: Transform,
-
   model:    u32,
 
   // this is a pointer because it very well may be shared?
@@ -21,15 +19,15 @@ GameObject :: struct {
 
 impl GameObject {
   rotate :: fn(*mut self, rotation: Vector4) {
-    self.transform.rotation = Vector4Add(self.transform.rotation, rotation);
+    self.body.transform.rotation = QuaternionMultiply(self.body.transform.rotation, rotation);
   }
 
   scale :: fn(*mut self, factor: Vector3) {
-    self.transform.scale = Vector3Multiply(self.transform.scale, factor);
+    self.body.transform.scale = Vector3Multiply(self.body.transform.scale, factor);
   }
 
   translate :: fn(*mut self, translation: Vector3) {
-    self.transform.translation = Vector3Add(self.transform.translation, translation);
+    self.body.transform.translation = Vector3Add(self.body.transform.translation, translation);
   }
 }
 
@@ -55,6 +53,7 @@ Engine :: struct {
   scene: *mut Scene,
   update: fn*(*mut Engine),
   physics: fn*(*mut Engine),
+  background_color: Color
 }
 
 impl Engine {
@@ -81,7 +80,7 @@ impl Engine {
 
     while !WindowShouldClose() {
       BeginDrawing();
-      ClearBackground(WHITE);
+      ClearBackground(self.background_color);
       BeginMode3D(self.scene.camera);
         if self.physics then
           self.physics(self);

@@ -14,7 +14,7 @@ import physics::*;
     }
     kind: BodyKind::Rigid
   }
-  collision := a.resolve_collision(b);
+  collision := a.resolve_collision(&const b);
   assert("Bodies should not collide", collision.collided == false);
 }
 
@@ -34,7 +34,7 @@ import physics::*;
     }
   }
 
-  collision := a.resolve_collision(b);
+  collision := a.resolve_collision(&const b);
 
   assert("Bodies should collide with scale", 
       collision.collided == true && (
@@ -49,36 +49,38 @@ import physics::*;
   a := Body.{
     transform: .{
       translation: Vector3::zero(),
-      rotation: Quaternion::from_euler(0.0, 0.0, 0.0),
+      rotation: .{x: 10, y: 20, z: 30},
       scale: Vector3::one(),
     }
   }
   b := Body.{
     transform: .{
       translation: Vector3::new(0.5, 0.5, 0.5),
+      rotation: .{},
+      scale: Vector3::one(),
+    }
+    kind: BodyKind::Rigid
+  }
+
+  collision := a.resolve_collision(&const b);
+  assert("Bodies should collide with rotation", collision.collided == true && (collision.penetration.x != 0.0 || collision.penetration.y != 0.0 || collision.penetration.z != 0.0));
+}
+
+#test test_body_no_collide_with_rotation :: fn() {
+  a := Body.{
+    transform: .{
+      translation: Vector3::zero(),
       rotation: Quaternion::from_euler(0.0, 0.0, 0.0),
       scale: Vector3::one(),
     }
   }
-  collision := a.resolve_collision(b);
-  assert("Bodies should collide with rotation", collision.collided == true && (collision.penetration.x != 0.0 || collision.penetration.y != 0.0 || collision.penetration.z != 0.0));
+  b := Body.{
+    transform: .{
+      translation: Vector3::new(10.0, 10.0, 10.0),
+      rotation: Quaternion::from_euler(0.0, 0.0, 0.0),
+      scale: Vector3::one(),
+    }
+  }
+  collision := a.resolve_collision(&const b);
+  assert("Bodies should not collide with rotation", collision.collided == false);
 }
-
-// #test test_body_no_collide_with_rotation :: fn() {
-//   a := Body.{
-//     transform: .{
-//       translation: Vector3::zero(),
-//       rotation: Quaternion::from_euler(0.0, 0.0, 0.0),
-//       scale: Vector3::one(),
-//     }
-//   }
-//   b := Body.{
-//     transform: .{
-//       translation: Vector3::new(10.0, 10.0, 10.0),
-//       rotation: Quaternion::from_euler(0.0, 0.0, 0.0),
-//       scale: Vector3::one(),
-//     }
-//   }
-//   collision := a.resolve_collision(b);
-//   assert("Bodies should not collide with rotation", collision.collided == false);
-// }
