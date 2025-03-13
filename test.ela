@@ -14,7 +14,7 @@ import physics::*;
     }
     kind: BodyKind::Rigid
   }
-  collision := a.resolve_collision(&const b);
+  collision := a.resolve_collision(&mut b);
   assert("Bodies should not collide", collision.hit == false);
 }
 
@@ -34,7 +34,7 @@ import physics::*;
     }
   }
 
-  collision := a.resolve_collision(&const b);
+  collision := a.resolve_collision(&mut b);
 
   assert("Bodies should collide with scale", 
       collision.hit == true && (
@@ -62,7 +62,7 @@ import physics::*;
     kind: BodyKind::Rigid
   }
 
-  collision := a.resolve_collision(&const b);
+  collision := a.resolve_collision(&mut b);
   assert("Bodies should collide with rotation", collision.hit == true && (collision.penetration.x != 0.0 || collision.penetration.y != 0.0 || collision.penetration.z != 0.0));
 }
 
@@ -81,6 +81,6 @@ import physics::*;
       scale: Vector3::one(),
     }
   }
-  collision := a.resolve_collision(&const b);
+  collision := a.resolve_collision(&mut b);
   assert("Bodies should not collide with rotation", collision.hit == false);
 }

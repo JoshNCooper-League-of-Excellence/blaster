@@ -113,11 +113,19 @@ impl Body {
       z: min(self_max.z - other_min.z, other_max.z - self_min.z),
     };
 
-    mut translation := &mut self.transform.translation;
-    *translation = *translation + penetration / 2.0;
-
-    mut other_translation := &mut other.transform.translation;
-    *other_translation = *other_translation - penetration / 2.0;
+    if self.kind == BodyKind::Static && other.kind == BodyKind::Rigid {
+      mut other_translation := &mut other.transform.translation;
+      *other_translation = *other_translation - penetration;
+    } else if self.kind == BodyKind::Rigid && other.kind == BodyKind::Static {
+      mut translation := &mut self.transform.translation;
+      *translation = *translation + penetration;
+    } else { // Both rigidbodies
+      mut translation := &mut self.transform.translation;
+      *translation = *translation + penetration / 2.0;
+      
+      mut other_translation := &mut other.transform.translation;
+      *other_translation = *other_translation - penetration / 2.0;
+    }
 
     self.contacts.push(other);
     other.contacts.push(self);

@@ -2,18 +2,9 @@ import raylib::*;
 import array::*;
 import physics::*;
 
-Metadata :: struct {
-  // this will be used for ansillary 
-  // informations like interactions, whatever, and such.
-}
-
 GameObject :: struct {
-  model:    u32,
-
-  // this is a pointer because it very well may be shared?
-  // textures, colors, idk.
-  metadata: *mut Metadata,
-  
+  model:    s32,
+  color:    Color,
   body:     Body,
 }
 
@@ -44,7 +35,13 @@ impl Scene {
     self.models.push(LoadModel(path.data));
     return self.models.length -1;
   }
-  add_object :: fn(*mut self, go: GameObject) {
+  add_object :: fn(*mut self, mut go: GameObject) {
+    if go.color.r == go.color.g &&
+       go.color.b == go.color.a && 
+       go.color.a == 0 {
+      go.color = WHITE;
+    }
+    
     self.game_objects.push(new(go));
   }
 }

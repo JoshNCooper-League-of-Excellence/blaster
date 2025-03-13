@@ -30,12 +30,12 @@ main :: fn() {
     for object in engine.scene.game_objects {
       transform := &mut object.body.transform;
 
-      rotation := fmod(GetTime() / 2.0, 360.0) as f32;
-      transform.rotation = Quaternion::from_euler(
-        cos(rotation) as f32,
-        rotation * 2,
-        sin(rotation) as f32,
-      );
+      // rotation := fmod(GetTime() / 2.0, 360.0) as f32;
+      // transform.rotation = Quaternion::from_euler(
+      //   cos(rotation) as f32,
+      //   rotation * 2,
+      //   sin(rotation) as f32,
+      // );
 
       mut rot_axis: Vector3;
       mut rot_angle: f32;
@@ -48,12 +48,15 @@ main :: fn() {
 
       rot_angle = rot_angle * (180.0 / 3.141592653589793);
 
-      DrawModelEx(
-        engine.scene.models[object.model],
-        transform.translation,
-        rot_axis, rot_angle,
-        transform.scale / 2, WHITE,
-      );
+      if object.model >= 0 {
+        DrawModelEx(
+          engine.scene.models[object.model],
+          transform.translation,
+          rot_axis, rot_angle,
+          transform.scale / 2, 
+          object.color
+        );
+      }
 
       object.body.draw();
     }
@@ -66,11 +69,13 @@ main :: fn() {
 
     for object in engine.scene.game_objects {
       for other in engine.scene.game_objects {
+        
         object.body.resolve_collision(&mut other.body);
-        pos := &mut object.body.transform.translation;
+        pos   := &mut object.body.transform.translation;
         scale := object.body.transform.scale;
-        if pos.y >= scale.y / 2 {
-          pos.y -= 0.01;
+
+        if pos.y > scale.y / 2 {
+          pos.y -= 9.81 / 100;
         } else {
           pos.y = scale.y / 2;
         }
